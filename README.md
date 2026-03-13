@@ -1,133 +1,117 @@
-# 🛒 ShopStream Analytics — E-Commerce Data Platform
+🛒 ShopStream Analytics — End-to-End E-Commerce Data Pipeline
 
-## Architecture Overview
 
-```
-AWS S3 (Raw Data)
-      │
-      ▼
-┌─────────────┐
-│   Airflow   │  ← Orchestration (Docker @ D:\airflow)
-│    DAGs     │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ Databricks  │  ← PySpark Transformation Jobs
-│  Spark Jobs │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│     dbt     │  ← SQL Transformations (Staging → Marts)
-│   Models    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Snowflake  │  ← Data Warehouse (Final Storage)
-│  Warehouse  │
-└──────┬──────┘
-       │
-       ▼
-  📊 Dashboards (Tableau / Metabase / Power BI)
-```
+📐 Architecture
+AWS S3 (Raw CSV Data)
+        │
+        ▼
+   Apache Airflow          ← Orchestration & Scheduling (Docker)
+        │
+        ▼
+  Snowflake RAW            ← Raw data landing zone
+        │
+        ▼
+     dbt Core              ← SQL Transformations
+   ┌────┴────┐
+ Staging  Intermediate
+        │
+        ▼
+  Snowflake Marts          ← Business-ready analytics tables
+        │
+        ▼
+    Dashboard              ← Power BI / Metabase
 
-## Project Structure
-
-```
+🗂️ Project Structure
 shopstream-analytics/
-│
-├── dags/                          # Airflow DAGs (copy to D:\airflow\dags)
-│   ├── shopstream_ingestion_dag.py       # S3 raw data ingestion
-│   ├── shopstream_transform_dag.py       # dbt transformation trigger
-│   └── shopstream_master_dag.py          # End-to-end pipeline
-│
-├── ingestion/                     # S3 ingestion scripts
-│   ├── s3_extractor.py
-│   └── schema_validator.py
-│
-├── spark_jobs/                    # Databricks PySpark jobs
-│   ├── orders_cleaner.py
-│   ├── customers_enrichment.py
-│   └── products_aggregator.py
-│
-├── dbt/                           # dbt transformation project
-│   ├── models/
-│   │   ├── staging/               # Raw → Cleaned (1:1 source tables)
-│   │   ├── intermediate/          # Business logic layer
-│   │   └── marts/                 # Final analytics tables
-│   ├── tests/
-│   ├── macros/
-│   └── seeds/
-│
-├── sql/                           # Snowflake DDL
-│   ├── ddl/                       # Table definitions
-│   └── procedures/                # Stored procedures
-│
-├── config/                        # Connection configs (never commit secrets!)
-│   ├── airflow_connections.json
-│   └── profiles.yml               # dbt profiles
-│
-├── tests/                         # Data quality tests
-└── docs/                          # Architecture docs
-```
+├── dags/
+│   └── shopstream_master_dag.py     # Airflow DAG — S3 to Snowflake
+├── dbt/
+│   ├── dbt_project.yml
+│   └── models/
+│       ├── staging/                 # stg_orders, stg_customers
+│       ├── intermediate/            # int_orders_enriched
+│       └── marts/                   # mart_orders, mart_customers
+├── ingestion/
+│   └── s3_extractor.py              # S3 extraction utility
+├── sql/
+│   └── ddl/
+│       ├── 01_snowflake_setup.sql   # Database, schemas, warehouse
+│       └── 02_raw_tables.sql        # RAW layer table definitions
+├── generate_sample_data.py          # Generates & uploads fake e-commerce data to S3
+├── requirements.txt
+├── .env.example                     # Environment variables template
+└── README.md
 
-## Data Flow
+📊 Data Pipeline
+LayerToolWhat it doesRaw StorageAWS S3CSV files land here dailyOrchestrationApache AirflowSchedules & monitors the pipelineRaw WarehouseSnowflake RAWExact copy of S3 dataStagingdbt viewsCleaned, renamed, typedIntermediatedbt tablesJoined, enriched business logicMartsdbt tablesFinal KPIs — RFM, LTV, revenue
 
-| Layer | Tool | Description |
-|-------|------|-------------|
-| **Ingestion** | Python + S3 | Raw CSV/JSON files land in S3 |
-| **Orchestration** | Airflow | Schedules and monitors all pipelines |
-| **Processing** | Databricks Spark | Large-scale data cleaning |
-| **Transformation** | dbt | Business logic, metrics |
-| **Storage** | Snowflake | Final warehouse tables |
-| **Serving** | Dashboard tool | Analytics & reporting |
+📦 Data Domains
+DomainRecordsDescriptionOrders1,000/dayTransactions, status, revenueCustomers500Profiles, segments, RFM scoresProducts100Catalog, pricing, inventoryEvents5,000/dayClickstream, funnel analytics
 
-## Data Domains
+🚀 How to Run This Project
+Prerequisites
 
-- **Orders** — transactions, order status, revenue
-- **Customers** — profiles, segments, LTV
-- **Products** — catalog, inventory, category performance
-- **Events** — clickstream, funnel analytics
+Python 3.10+
+Docker Desktop
+AWS Account (S3 bucket)
+Snowflake Account (free trial works)
+dbt-snowflake installed
 
-## Setup Instructions
+1. Clone the repo
+bashgit clone https://github.com/abc085455-byte/shopstream-analytics.git
+cd shopstream-analytics
+2. Setup environment variables
+bashcp .env.example .env
+# Fill in your AWS and Snowflake credentials in .env
+3. Setup Snowflake
+sql-- Run in Snowflake worksheet
+-- sql/ddl/01_snowflake_setup.sql  (database, schemas, warehouse)
+-- sql/ddl/02_raw_tables.sql       (RAW tables)
+4. Generate sample data & upload to S3
+bashpython generate_sample_data.py
+5. Start Airflow
+bashcd /path/to/airflow
+docker compose up -d
+# Open http://localhost:8080
+# Trigger: shopstream_master_pipeline
+6. Run dbt transformations
+bashcd dbt
+dbt run
+dbt test
 
-### 1. Copy DAGs to Airflow
-```bash
-# Windows
-xcopy /E /I dags D:\airflow\dags\shopstream
-```
+🏗️ dbt Models
+RAW.ORDERS + RAW.CUSTOMERS
+        │
+        ▼
+stg_orders          stg_customers
+        │                  │
+        └──────┬───────────┘
+               ▼
+      int_orders_enriched
+               │
+       ┌───────┴────────┐
+       ▼                ▼
+  mart_orders     mart_customers
+  (revenue KPIs)  (RFM + LTV segments)
 
-### 2. Set Airflow Connections
-In Airflow UI → Admin → Connections:
-- `aws_s3_shopstream` — AWS credentials
-- `snowflake_shopstream` — Snowflake connection
-- `databricks_shopstream` — Databricks token
+📈 Key Metrics Generated
+mart_orders
 
-### 3. Configure dbt
-```bash
-cp config/profiles.yml ~/.dbt/profiles.yml
-cd dbt && dbt debug
-```
+Net revenue per order
+Order status breakdown
+Payment method analysis
 
-### 4. Trigger Pipeline
-```bash
-# Via Airflow UI or CLI
-airflow dags trigger shopstream_master_dag
-```
+mart_customers
 
-## Environment Variables Required
-```
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_S3_BUCKET=
-SNOWFLAKE_ACCOUNT=
-SNOWFLAKE_USER=
-SNOWFLAKE_PASSWORD=
-SNOWFLAKE_DATABASE=SHOPSTREAM_DB
-SNOWFLAKE_WAREHOUSE=SHOPSTREAM_WH
-SNOWFLAKE_ROLE=TRANSFORMER
-DATABRICKS_HOST=
-DATABRICKS_TOKEN=
-```
+RFM Score (Recency, Frequency, Monetary)
+LTV Tier (High / Medium / Low)
+Customer segments
+
+
+
+🛠️ Tech Stack
+ToolVersionPurposeApache Airflow3.1.7Pipeline orchestrationdbt Core1.11.7SQL transformationsSnowflake—Cloud data warehouseAWS S3—Raw data storagePython3.10Ingestion scriptsDocker—Airflow containerization
+
+👤 Author
+Muhammad Shawail
+Data Engineering Project
