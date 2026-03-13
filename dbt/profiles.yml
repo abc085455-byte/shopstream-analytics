@@ -4,8 +4,8 @@ shopstream:
     dev:
       type: snowflake
       account: FIARMWM-NQ08270
-      user: MuhammadShawail
-      password: 03153371901@Qwerty
+      user: USERNAME
+      password: SNOWFLAKE_PASSWORD
       role: ACCOUNTADMIN
       database: SHOPSTREAM_DB
       warehouse: SHOPSTREAM_WH
