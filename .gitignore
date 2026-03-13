@@ -1,0 +1,41 @@
+# Secrets & Credentials
+.env
+config/profiles.yml
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Airflow
+logs/
+*.log
+airflow.db
+airflow.cfg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (never commit raw data)
+*.csv
+*.parquet
+*.json
+data/

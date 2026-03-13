@@ -1,0 +1,49 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data ingested from AWS S3"
+    database: SHOPSTREAM_DB
+    schema: RAW
+    config:
+      freshness:
+        warn_after: {count: 24, period: hour}
+        error_after: {count: 48, period: hour}
+    loaded_at_field: _source_loaded_at
+
+    tables:
+      - name: orders
+        columns:
+          - name: order_id
+            tests:
+              - not_null
+          - name: customer_id
+            tests:
+              - not_null
+
+      - name: order_items
+        columns:
+          - name: order_item_id
+            tests:
+              - not_null
+              - unique
+
+      - name: customers
+        columns:
+          - name: customer_id
+            tests:
+              - not_null
+              - unique
+
+      - name: products
+        columns:
+          - name: product_id
+            tests:
+              - not_null
+              - unique
+
+      - name: events
+        columns:
+          - name: event_id
+            tests:
+              - not_null

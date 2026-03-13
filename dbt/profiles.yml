@@ -1,0 +1,21 @@
+shopstream:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: FIARMWM-NQ08270
+      user: MuhammadShawail
+      password: 03153371901@Qwerty
+      role: ACCOUNTADMIN
+      database: SHOPSTREAM_DB
+      warehouse: SHOPSTREAM_WH
+      schema: STAGING
+      threads: 4
+
+
+
+
+
+
+### Snowflake Account Identifier Kaise Pata Karo?
+

@@ -1,0 +1,52 @@
+name: 'shopstream'
+version: '1.0.0'
+config-version: 2
+
+profile: 'shopstream'
+
+# Model paths
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Model configurations by layer
+models:
+  shopstream:
+    # RAW → Staging: views (cheap, always fresh)
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ['staging']
+
+    # Staging → Intermediate: tables (business logic, reused)
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+      +tags: ['intermediate']
+
+    # Intermediate → Marts: tables (dashboard-ready)
+    marts:
+      +materialized: table
+      +schema: marts
+      +tags: ['marts']
+      orders:
+        +tags: ['orders', 'revenue']
+      customers:
+        +tags: ['customers', 'crm']
+      products:
+        +tags: ['products', 'inventory']
+
+# Variable defaults
+vars:
+  shopstream:
+    # Override with: dbt run --vars '{"run_date": "2024-01-15"}'
+    run_date: "{{ run_started_at.strftime('%Y-%m-%d') }}"
+    lookback_days: 7
